@@ -8,6 +8,10 @@ vRP.prepare('Doug/RetiraBan','DELETE FROM luar_tempban WHERE user_id = @idpessoa
 vRP.prepare('Doug/RecebeTemp','SELECT * FROM luar_tempban WHERE user_id = user_id')
 vRP.prepare('Doug/VerificaTemp','SELECT * FROM luar_tempban WHERE user_id = @user_id')
 
+-- Base Creative
+vRP.prepare('Doug/SetBanned','UPDATE vrp_infos SET banned = 1 WHERE id = @user_id')
+vRP.prepare('Doug/SetUnbanned','UPDATE vrp_indos SET banned = 0 WHERE id = @user_id')
+
 RegisterCommand(Doug.ComandoTempBan, function(source,args)
     local user_id = vRP.getUserId(source)
     for k, v in pairs(Doug.PermissaoUsarComando) do
@@ -17,20 +21,26 @@ RegisterCommand(Doug.ComandoTempBan, function(source,args)
                     local idbanido = vRP.getUserSource(parseInt(args[1]))
                     local tempodefinido = parseInt(args[2])
                     local tempobanido = parseInt(86400*tempodefinido-(os.time()-os.time()))
-                    vRP.setBanned(parseInt(args[1]),true)
                     local banidopor = getTempoBanido(tempobanido)
-                    print(banidopor)
                     DropPlayer(idbanido,"Você recebeu um Temp-Ban de "..banidopor.."! [ Mais informações em: "..Doug.LinkDiscord.." ]")
                     vRP.execute('Doug/RegistraTempban',{idpessoa = parseInt(args[1]), banido = os.time(), tempban = tempobanido})
+                    if not Doug.BaseCreative then
+                        vRP.setBanned(parseInt(args[1]),true)
+                    else
+                        vRP.execute('Doug/SetBanned',{user_id = parseInt(args[1])})
+                    end
                 elseif Doug.UsarHoraDia == 'hora' then
                     local idbanido = vRP.getUserSource(parseInt(args[1]))
                     local tempodefinido = parseInt(args[2])
                     local tempobanido = parseInt(86400*tempodefinido-(os.time()-os.time()))
-                    vRP.setBanned(parseInt(args[1]),true)
                     local banidopor = getTempoBanido(tempobanido)
-                    print(banidopor)
                     DropPlayer(idbanido,"Você recebeu um Temp-Ban de "..banidopor.."! [ Mais informações em: "..Doug.LinkDiscord.." ]")
                     vRP.execute('Doug/RegistraTempban',{idpessoa = parseInt(args[1]), banido = os.time(), tempban = tempobanido})
+                    if not Doug.BaseCreative then
+                        vRP.setBanned(parseInt(args[1]),true)
+                    else
+                        vRP.execute('Doug/SetBanned',{user_id = parseInt(args[1])})
+                    end
                 end
             else
                 TriggerClientEvent('Notify',source,'negado','Você está usando o comando errado: /'..Doug.ComandoTempBan..' IDPessoa TempoBanido')
@@ -44,8 +54,12 @@ RegisterCommand(Doug.ComandoRetirarTempBan, function(source,args)
     for k, v in pairs(Doug.PermissaoUsarComando) do
         if vRP.hasPermission(user_id, v) then 
             if args[1] ~= nil then 
-                vRP.setBanned(parseInt(args[1]),false)
                 vRP.execute('Doug/RetiraBan',{idpessoa = parseInt(args[1])})
+                if not Doug.BaseCreative then
+                    vRP.setBanned(parseInt(args[1]),false)
+                else
+                    vRP.execute('Doug/SetUnbanned',{user_id = parseInt(args[1])})
+                end
             else
                 TriggerClientEvent('Notify',source,'negado','Você está usando o comando errado: /'..Doug.ComandoRetirarTempBan..' IDPessoa')
             end
@@ -60,8 +74,13 @@ CreateThread(function()
         for k,v in pairs(table) do 
             local tempo = v.banido+v.tempban
             if os.time() >= tempo then 
-                vRP.setBanned(v.user_id,false)
+                local idpessoa = v.user_id
                 vRP.execute('Doug/RetiraBan',{idpessoa = v.user_id})
+                if not Doug.BaseCreative then
+                    vRP.setBanned(idpessoa,false)
+                else
+                    vRP.execute('Doug/SetUnbanned',{user_id = idpessoa})
+                end
             end
         end
     end
@@ -92,7 +111,7 @@ AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
     local source = source
     local user_id = vRP.getUserId(source)
     deferrals.update('Fazendo algumas verificações de segurança...')
-    Citizen.Wait(2000)
+    Citizen.Wait(1)
     deferrals.update(TempoBanido(user_id))
     SetTimeout(5000,function()
         deferrals.done()
