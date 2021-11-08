@@ -1,5 +1,5 @@
-fx_version 'cereluan'
-game{'gta5'}
+fx_version 'bodacious'
+game 'gta5'
 
 author 'Douglas Costa | Discord: Doug#1766 | CEO - Luar Inc.'
 description 'Sistema de temp-ban gratuito'
